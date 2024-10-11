@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Interface</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      /* General Styling */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        padding: 10px;
+      }
+
+      /* Chat container */
+      .chat-container {
+        width: 100%;
+        max-width: 850px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: 90vh;
+        overflow: hidden;
+      }
+
+      /* Chat box styling */
+      .chat-box {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 10px;
+        border-radius: 10px;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+
+      /* User and Assistant messages */
+      .message.user {
+        background-color: #d0e8ff;
+        align-self: flex-end;
+        text-align: right;
+        font-size: 16px;
+      }
+
+      .message.assistant {
+        background-color: #f0f0f0;
+        align-self: flex-start;
+        font-size: 16px;
+      }
+
+      /* Formatted content inside assistant messages */
+      .message.assistant strong {
+        font-size: 18px;
+        font-weight: bold;
+      }
+
+      .message.assistant ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+
+      .message.assistant ul li {
+        list-style-type: disc;
+        margin-bottom: 8px;
+      }
+
+      .message.assistant p {
+        margin: 5px 0;
+      }
+
+      /* Input section styling */
+      .chat-input {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #ddd;
+        background-color: #fff;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-right: 10px;
+        outline: none;
+      }
+
+      .chat-input button {
+        padding: 12px 15px;
+        background-color: #121f49;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .chat-input button:hover {
+        background-color: #00c85c;
+        transition: background-color 0.3s ease;
+      }
+
+      /* Loading text styling */
+      .loading {
+        text-align: center;
+        color: gray;
+      }
+
+      /* Header section */
+      .chat-header {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid #ddd;
+        font-size: 18px;
+      }
+
+      .chat-header img {
+        width: 30px;
+        height: 30px;
+      }
+
+      .chat-header p {
+        margin: 0;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+      .chat-header h1 {
+        font-size: 26px;
+      }
+
+      /* Responsive Styles */
+      @media screen and (max-width: 768px) {
+        .chat-container {
+          max-width: 100%;
+        }
+
+        .chat-input input {
+          font-size: 14px;
+        }
+
+        .chat-input button {
+          font-size: 14px;
+          padding: 10px;
+        }
+
+        .message.user,
+        .message.assistant {
+          font-size: 14px;
+        }
+
+        .chat-header h1 {
+          font-size: 18px;
+        }
+      }
+
+      @media screen and (max-width: 480px) {
+        .chat-header h1 {
+          font-size: 16px;
+        }
+
+        .chat-header img {
+          width: 25px;
+          height: 25px;
+        }
+
+        .message.user,
+        .message.assistant {
+          font-size: 14px;
+        }
+
+        .chat-input input {
+          font-size: 14px;
+        }
+
+        .chat-input button {
+          font-size: 14px;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="chat-container">
+      <!-- Header -->
+      <div class="chat-header">
+        <img
+          src="https://portalstg.optimal.md/Content/frontend_assets/images/favicon/favicon32x32.png"
+          alt="AI Consult"
+        />
+        <div>
+          <h1 style="margin: 0px">Your AI Consult</h1>
+          <p>
+            This is NOT medical advice. Please consult an actual physician. If
+            this is an emergency, please call 911.
+          </p>
+        </div>
+      </div>
+
+      <!-- Chat Box -->
+      <div id="chatBox" class="chat-box">
+        <!-- Messages will appear here -->
+      </div>
+
+      <!-- Input Section -->
+      <form id="chatForm" class="chat-input">
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Search Here..."
+          required
+        />
+        <button type="submit" style="font-weight: 600">
+          <i class="fas fa-search"></i> Search
+        </button>
+      </form>
+    </div>
+
+    <script>
+      // Function to append formatted messages to the chat
+      function appendMessage(role, content) {
+        const chatBox = document.getElementById("chatBox");
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message");
+
+        if (role === "user") {
+          messageDiv.classList.add("user");
+          messageDiv.textContent = content;
+        } else if (role === "assistant") {
+          messageDiv.classList.add("assistant");
+
+          // Format the content (parsing as HTML)
+          messageDiv.innerHTML = formatMessage(content);
+        }
+
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+      }
+
+      // Function to format the bot's response
+      function formatMessage(content) {
+        let formattedContent = content
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>") // Bold for **text**
+          .replace(/\n/g, "<br>") // Line breaks
+          .replace(/\n\d+\.\s(.+?)/g, "<ol><li>$1</li></ol>") // Numbered lists (e.g., 1. text)
+          .replace(/\n\* (.+?)/g, "<ul><li>$1</li></ul>") // Bullet points
+          .replace(/<\/ul>\s*<ul>/g, "") // Remove duplicate <ul> tags
+          .replace(/<\/ol>\s*<ol>/g, ""); // Remove duplicate <ol> tags
+
+        return formattedContent;
+      }
+
+      // Function to show loading text while waiting for a response
+      function showLoading() {
+        const chatBox = document.getElementById("chatBox");
+        const loadingDiv = document.createElement("div");
+        loadingDiv.id = "loading";
+        loadingDiv.classList.add("loading");
+        loadingDiv.textContent = "AI is thinking...";
+        chatBox.appendChild(loadingDiv);
+      }
+
+      // Function to remove loading text
+      function removeLoading() {
+        const loadingDiv = document.getElementById("loading");
+        if (loadingDiv) {
+          loadingDiv.remove();
+        }
+      }
+
+      // Handling form submission
+      document
+        .getElementById("chatForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const userInput = document.getElementById("userInput");
+          const userMessage = userInput.value;
+
+          // Append user message to the chat
+          appendMessage("user", userMessage);
+
+          // Clear the input
+          userInput.value = "";
+
+          // Show loading text
+          showLoading();
+
+          // Prepare API request
+          const apiUrl = "https://omd-subscription-server.vercel.app/api/chat/completions";
+          const headers = {
+            "Content-Type": "application/json",
+          };
+
+          const body = JSON.stringify({
+            model: "ALIENTELLIGENCE/gooddoctor:latest",
+            messages: [
+              {
+                role: "user",
+                content: userMessage,
+              },
+            ],
+          });
+
+          // Fetch response from API
+          try {
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers,
+              body,
+            });
+
+            const data = await response.json();
+
+            if (data && data.choices && data.choices[0]) {
+              const assistantMessage = data.choices[0].message.content;
+
+              // Remove loading text and append bot's response
+              removeLoading();
+              appendMessage("assistant", assistantMessage);
+            } else {
+              throw new Error("Invalid API response");
+            }
+          } catch (error) {
+            console.error("Error:", error);
+
+            // Handle API error, remove loading and display error message
+            removeLoading();
+            appendMessage(
+              "assistant",
+              "Sorry, I couldn't process your request. Please try again."
+            );
+          }
+        });
+    </script>
+  </body>
+</html>
